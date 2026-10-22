@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกรายรับ-รายจ่าย สุดคิวท์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            /* Pastel background */
+            background-color: #fdf2f8; 
+            background-image: radial-gradient(at 10% 90%, #fce7f3 0px, transparent 50%),
+                              radial-gradient(at 90% 10%, #e0f2fe 0px, transparent 50%),
+                              radial-gradient(at 90% 90%, #fef08a 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+        .hide { display: none !important; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f9a8d4; }
+    </style>
+</head>
+<body class="text-gray-700 min-h-screen pb-20 sm:pb-10 pt-6 px-4">
+
+    <div class="max-w-md mx-auto relative">
+        
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-semibold text-pink-500 flex items-center justify-center gap-2">
+                <i class="ph-fill ph-piggy-bank text-3xl"></i>
+                กระปุกออมสิน
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">บันทึกรายรับ-รายจ่าย น่ารักๆ</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex bg-white rounded-full p-1 mb-6 shadow-sm border border-pink-100">
+            <button onclick="switchTab('record')" id="tab-record" class="flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all bg-pink-100 text-pink-600 shadow-sm">
+                <i class="ph ph-plus-circle mr-1"></i> บันทึก
+            </button>
+            <button onclick="switchTab('summary')" id="tab-summary" class="flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all text-gray-500 hover:text-pink-500">
+                <i class="ph ph-chart-pie-slice mr-1"></i> สรุปผล
+            </button>
+        </div>
+
+        <!-- VIEWS -->
+        <!-- 2. Record View (ตั้งเป็นหน้าแรก) -->
+        <div id="view-record" class="glass-card rounded-3xl p-6">
+            <h2 class="text-lg font-medium text-gray-700 mb-4 border-b pb-2 flex items-center gap-2">
+                <i class="ph-fill ph-pencil-simple text-pink-400"></i> เพิ่มรายการใหม่
+            </h2>
+            
+            <form id="record-form" class="space-y-4" onsubmit="handleRecordSubmit(event)">
+                
+                <!-- Type Selection -->
+                <div class="flex gap-2">
+                    <label class="flex-1 cursor-pointer relative">
+                        <input type="radio" name="type" value="income" class="peer sr-only" required>
+                        <div class="text-center p-3 rounded-2xl border-2 border-gray-100 text-gray-500 peer-checked:border-green-300 peer-checked:bg-green-50 peer-checked:text-green-600 transition-all">
+                            <i class="ph-fill ph-arrow-circle-down text-xl mb-1 block"></i>
+                            <span class="text-sm font-medium">รายรับ</span>
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer relative">
+                        <input type="radio" name="type" value="expense" class="peer sr-only" checked required>
+                        <div class="text-center p-3 rounded-2xl border-2 border-gray-100 text-gray-500 peer-checked:border-pink-300 peer-checked:bg-pink-50 peer-checked:text-pink-600 transition-all">
+                            <i class="ph-fill ph-arrow-circle-up text-xl mb-1 block"></i>
+                            <span class="text-sm font-medium">รายจ่าย</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Amount -->
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1 ml-1">จำนวนเงิน (บาท)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <span class="text-gray-400">฿</span>
+                        </div>
+                        <input type="number" id="amount" step="0.01" min="0" required class="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-200 focus:border-pink-300 focus:ring focus:ring-pink-100 outline-none transition-all text-lg" placeholder="0.00">
+                    </div>
+                </div>
+
+                <!-- Category & Date row -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1 ml-1">หมวดหมู่</label>
+                        <select id="category" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-pink-300 focus:ring focus:ring-pink-100 outline-none transition-all text-sm appearance-none bg-white">
+                            <option value="อาหาร">🍜 อาหาร/เครื่องดื่ม</option>
+                            <option value="เดินทาง">🚌 เดินทาง</option>
+                            <option value="ช้อปปิ้ง">🛍️ ช้อปปิ้ง</option>
+                            <option value="บิล">🧾 บิล/ค่าใช้จ่าย</option>
+                            <option value="เงินเดือน">💰 เงินเดือน</option>
+                            <option value="อื่นๆ">✨ อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1 ml-1">วันที่</label>
+                        <input type="date" id="date" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-pink-300 focus:ring focus:ring-pink-100 outline-none transition-all text-sm bg-white">
+                    </div>
+                </div>
+
+                <!-- Note -->
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1 ml-1">บันทึกเพิ่มเติม</label>
+                    <input type="text" id="note" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-pink-300 focus:ring focus:ring-pink-100 outline-none transition-all text-sm" placeholder="เช่น ค่ากาแฟ, เงินเดือนออก...">
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-medium py-3 px-4 rounded-2xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <i class="ph-fill ph-check-circle text-lg"></i> บันทึกข้อมูล
+                </button>
+            </form>
+        </div>
+
+        <!-- 1. Summary & History View -->
+        <div id="view-summary" class="hide space-y-4">
+            <!-- Balance Card -->
+            <div class="glass-card rounded-3xl p-6 text-center border-t-4 border-blue-300">
+                <p class="text-gray-500 text-sm mb-1">ยอดเงินคงเหลือ</p>
+                <h2 class="text-4xl font-semibold text-blue-500" id="total-balance">฿0.00</h2>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Income Card -->
+                <div class="glass-card rounded-3xl p-4 flex flex-col items-center border-t-4 border-green-300">
+                    <div class="w-10 h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center mb-2">
+                        <i class="ph-fill ph-trend-up text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-500">รายรับรวม</p>
+                    <p class="text-lg font-medium text-green-600" id="total-income">฿0.00</p>
+                </div>
+                <!-- Expense Card -->
+                <div class="glass-card rounded-3xl p-4 flex flex-col items-center border-t-4 border-pink-300">
+                    <div class="w-10 h-10 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center mb-2">
+                        <i class="ph-fill ph-trend-down text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-500">รายจ่ายรวม</p>
+                    <p class="text-lg font-medium text-pink-600" id="total-expense">฿0.00</p>
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="mt-6">
+                <div class="flex justify-between items-center mb-3 px-2">
+                    <h3 class="font-medium text-gray-700">รายการล่าสุด</h3>
+                    <button onclick="loadData()" class="text-xs text-blue-400 hover:text-blue-600 flex items-center gap-1">
+                        <i class="ph ph-arrows-clockwise"></i> รีเฟรช
+                    </button>
+                </div>
+                <div id="history-list" class="space-y-3">
+                    <!-- Items will be generated here by JS -->
+                    <div class="text-center text-sm text-gray-400 py-6">กำลังโหลดข้อมูล...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg text-sm transition-all duration-300 opacity-0 translate-y-10 pointer-events-none z-50 flex items-center gap-2 w-max max-w-[90%]">
+        <i class="ph-fill ph-info"></i> <span id="toast-msg">ข้อความ</span>
+    </div>
+
+    <script>
+        // --- การตั้งค่า Google Apps Script Web App URL ---
+        const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxvmHJe0b_Akz_nBN9idG3KyDXkmZJX8ykZPwb4ZI6eMFUxuw5SysGzWuaKNsVyk9ZQ/exec';
+
+        // --- State Management ---
+        let transactions = [];
+        
+        // Initialize Date
+        document.getElementById('date').valueAsDate = new Date();
+
+        // --- Navigation ---
+        function switchTab(tabId) {
+            // ซ่อนทุกหน้า
+            document.getElementById('view-summary').classList.add('hide');
+            document.getElementById('view-record').classList.add('hide');
+            
+            // รีเซ็ตการตกแต่งปุ่ม Tab
+            const tabs = ['summary', 'record'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                el.classList.remove('bg-pink-100', 'text-pink-600', 'shadow-sm');
+                el.classList.add('text-gray-500');
+            });
+
+            // แสดงหน้าที่เลือก
+            document.getElementById(`view-${tabId}`).classList.remove('hide');
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            activeTab.classList.remove('text-gray-500');
+            activeTab.classList.add('bg-pink-100', 'text-pink-600', 'shadow-sm');
+
+            if(tabId === 'summary') {
+                loadData(); // ดึงข้อมูลใหม่เมื่อเปิดหน้าสรุปผล
+            }
+        }
+
+        // --- Data Logic ---
+        
+        // แปลงตัวเลขเป็นค่าเงินบาท
+        const formatMoney = (amount) => {
+            return new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(amount);
+        };
+
+        // Render Summary & List
+        function renderUI() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const listEl = document.getElementById('history-list');
+            listEl.innerHTML = '';
+
+            if (transactions.length === 0) {
+                listEl.innerHTML = '<div class="text-center text-sm text-gray-400 py-6 bg-white/50 rounded-2xl border border-dashed border-gray-200">ยังไม่มีรายการบันทึก</div>';
+            } else {
+                // เรียงวันที่ (ใหม่สุดขึ้นก่อน)
+                const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+                
+                sorted.forEach(item => {
+                    const amount = parseFloat(item.amount);
+                    if (item.type === 'income') totalIncome += amount;
+                    else totalExpense += amount;
+
+                    const isIncome = item.type === 'income';
+                    const colorClass = isIncome ? 'text-green-500' : 'text-pink-500';
+                    const sign = isIncome ? '+' : '-';
+                    const icon = getCategoryIcon(item.category);
+
+                    const dateStr = new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+
+                    const itemHtml = `
+                        <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xl ${colorClass}">
+                                ${icon}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-700 truncate">${item.category}</p>
+                                <p class="text-xs text-gray-400 truncate">${dateStr} ${item.note ? `• ${item.note}` : ''}</p>
+                            </div>
+                            <div class="text-right whitespace-nowrap pl-2">
+                                <p class="text-sm font-semibold ${colorClass}">${sign}${formatMoney(amount).replace('฿', '')}</p>
+                            </div>
+                        </div>
+                    `;
+                    listEl.insertAdjacentHTML('beforeend', itemHtml);
+                });
+            }
+
+            const balance = totalIncome - totalExpense;
+            document.getElementById('total-income').innerText = formatMoney(totalIncome);
+            document.getElementById('total-expense').innerText = formatMoney(totalExpense);
+            
+            const balEl = document.getElementById('total-balance');
+            balEl.innerText = formatMoney(balance);
+            balEl.className = `text-4xl font-semibold ${balance >= 0 ? 'text-blue-500' : 'text-pink-500'}`;
+        }
+
+        // Helper เลือกไอคอน
+        function getCategoryIcon(cat) {
+            if(cat.includes('อาหาร')) return '🍜';
+            if(cat.includes('เดินทาง')) return '🚌';
+            if(cat.includes('ช้อปปิ้ง')) return '🛍️';
+            if(cat.includes('บิล')) return '🧾';
+            if(cat.includes('เงินเดือน')) return '💰';
+            return '✨';
+        }
+
+        // Fetch Data จาก Web App (ผ่าน HTTP GET)
+        function loadData() {
+            const listEl = document.getElementById('history-list');
+            listEl.innerHTML = '<div class="text-center text-sm text-gray-400 py-6"><i class="ph ph-spinner animate-spin text-xl"></i> กำลังโหลดข้อมูล...</div>';
+            
+            fetch(WEBAPP_URL + '?action=getData')
+                .then(response => response.json())
+                .then(data => {
+                    if(data.error) {
+                        showToast('เกิดข้อผิดพลาด: ' + data.error);
+                        fallbackLocalLoad();
+                    } else {
+                        transactions = data;
+                        renderUI();
+                    }
+                })
+                .catch(error => {
+                    console.error("Fetch Error:", error);
+                    showToast('เชื่อมต่อล้มเหลว กำลังแสดงข้อมูลในเครื่อง');
+                    fallbackLocalLoad();
+                });
+        }
+
+        // โหลดข้อมูลในเครื่อง
+        function fallbackLocalLoad() {
+            const localData = localStorage.getItem('budgetApp_data');
+            transactions = localData ? JSON.parse(localData) : [];
+            renderUI();
+        }
+
+        // Submit Form เข้า Web App (ผ่าน HTTP POST)
+        function handleRecordSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> กำลังบันทึก...';
+            btn.disabled = true;
+
+            const newItem = {
+                id: new Date().getTime(),
+                type: document.querySelector('input[name="type"]:checked').value,
+                amount: document.getElementById('amount').value,
+                category: document.getElementById('category').value,
+                date: document.getElementById('date').value,
+                note: document.getElementById('note').value
+            };
+
+            // ใช้ fetch POST ส่งข้อมูลไปที่ Web App
+            fetch(WEBAPP_URL, {
+                method: 'POST',
+                // ส่งเป็น String เปล่าๆ ป้องกันติดปัญหา CORS ในบราวเซอร์
+                body: JSON.stringify(newItem)
+            })
+            .then(response => response.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    transactions.push(newItem);
+                    showToast('บันทึกลง Sheet สำเร็จ! 🎉');
+                    resetFormAndBtn(btn);
+                } else {
+                    showToast('เกิดข้อผิดพลาด: ' + res.message);
+                    resetBtnOnly(btn);
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                // ถ้าเน็ตหลุด ให้เซฟลงเครื่องไปก่อน
+                transactions.push(newItem);
+                localStorage.setItem('budgetApp_data', JSON.stringify(transactions));
+                showToast('บันทึกข้อมูลสำเร็จ! ✨ (บันทึกลงในเครื่อง)');
+                resetFormAndBtn(btn);
+            });
+        }
+
+        function resetFormAndBtn(btn) {
+            document.getElementById('record-form').reset();
+            document.getElementById('date').valueAsDate = new Date();
+            switchTab('summary');
+            resetBtnOnly(btn);
+        }
+
+        function resetBtnOnly(btn) {
+            btn.innerHTML = '<i class="ph-fill ph-check-circle text-lg"></i> บันทึกข้อมูล';
+            btn.disabled = false;
+        }
+
+        // Toast Notification
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-10');
+            }, 3000);
+        }
+
+        // เมื่อโหลดหน้าเว็บเสร็จ ให้แสดงหน้า "บันทึก" เป็นหน้าแรกและโหลดข้อมูลเบื้องหลัง
+        switchTab('record');
+        loadData();
+
+    </script>
+</body>
+</html>
